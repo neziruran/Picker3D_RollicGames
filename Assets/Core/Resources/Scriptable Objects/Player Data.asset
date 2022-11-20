@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b599bb011bd0d5348ae87d13cbd482a3, type: 3}
   m_Name: Player Data
   m_EditorClassIdentifier: 
-  _horizontalSpeed: 25
+  _horizontalSpeed: 2000
   _minBoundX: -0.95
   _maxBoundX: 0.95
   _forwardSpeed: 2
   _ballPush: 25
-  _playerScale: {x: 1, y: 1, z: 1}

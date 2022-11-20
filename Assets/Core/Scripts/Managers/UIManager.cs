@@ -91,6 +91,7 @@ public class UIManager : MonoBehaviour
         DisableStageUi(_stage1Image);
         DisableStageUi(_stage2Image);
         DisableStageUi(_stage3Image);
+        _scaleUpText.transform.localScale = Vector3.one;
 
     }
 

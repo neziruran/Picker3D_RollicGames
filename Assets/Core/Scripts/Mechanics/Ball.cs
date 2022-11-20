@@ -16,6 +16,11 @@ public class Ball : MonoBehaviour
         _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         transform.DOScale(ballScale, 0f);
     }
+
+    void Update()
+    {
+        _rigidbody.velocity.Normalize();
+    }
     
     private void OnTriggerEnter(Collider other)
     {

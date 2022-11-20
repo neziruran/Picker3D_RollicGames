@@ -25,13 +25,12 @@ public class LevelManager : MonoBehaviour
     private TMP_Text[] _ballInsidePoolText;
     
     
-    [SerializeField] private Transform firstSpawnPoint;
+    [SerializeField] private Transform _firstSpawnPoint;
     [SerializeField] private GameObject _levelContainer;
     [SerializeField] private GameObject _fakeEnvironment;
 
     private UIManager _uiManager;
     private PlayerController _playerController;
-    
 
     private string _saveData;
 
@@ -43,7 +42,7 @@ public class LevelManager : MonoBehaviour
             Instance = this;
         
         _uiManager = GetComponent<UIManager>();
-
+        
         LoadLevelData();
         LoadAssets();
 
@@ -55,7 +54,7 @@ public class LevelManager : MonoBehaviour
         _uiManager.ScaleTapButton();
 
     }
-
+    
     private void LoadAssets()
     {
         _fakeEnvironment.gameObject.SetActive(true);
@@ -82,13 +81,13 @@ public class LevelManager : MonoBehaviour
         level.transform.parent = _levelContainer.transform;
         Destroy(_levelContainer.transform.GetChild(0).gameObject,10f);
         _playerController.SetPlayerState(true);
+
     }
     
     public void CreateFirstLevel()
     {
-        GameObject level = Instantiate(_levelData[_levelCount-1].LevelPrefab, firstSpawnPoint.position, transform.rotation);
+        GameObject level = Instantiate(_levelData[_levelCount-1].LevelPrefab, _firstSpawnPoint.position, transform.rotation);
         level.transform.parent = _levelContainer.transform;
-
     }
 
     public void SetStageRequiredBallCountText(TMP_Text[] poolsRequiredBallText)
@@ -222,7 +221,7 @@ public class LevelManager : MonoBehaviour
         PlayerPrefs.SetInt(_saveData, _levelCount);
         PlayerPrefs.Save();
     }
-
+    
     private void LoadLevelData()
     {
         if (!PlayerPrefs.HasKey(_saveData))

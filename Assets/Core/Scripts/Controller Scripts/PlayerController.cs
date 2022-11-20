@@ -10,11 +10,14 @@ public class PlayerController : MonoBehaviour
     
     [SerializeField] private PlayerScriptable _playerData;
     [SerializeField] private GameObject _propellersParent;
-
-    private List<Rigidbody> _ballRigidbodies = new List<Rigidbody>();
+    [SerializeField] private Camera _pickerCamera;
+    
+    //Movement variables
+    private Vector3 _mousePos;
     
     private float _lastMousePos;
     private float _swerve;
+    private float _distanceToScreen;
     
     private bool _hasInput = false;
     private bool _initialized = false;
@@ -22,6 +25,8 @@ public class PlayerController : MonoBehaviour
 
     private GameObject _mainBody;
     private Rigidbody _playerRigidbody;
+
+    private List<Rigidbody> _ballRigidbodies = new List<Rigidbody>();
 
 
     #region Built-In Methods
@@ -66,13 +71,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
-    private IEnumerator SetHitLock()
-    {
-        _hitLock = true;
-        yield return new WaitForSeconds(2f);
-        _hitLock = false;
-    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -144,6 +142,13 @@ public class PlayerController : MonoBehaviour
 
     #region Movement
 
+
+    private IEnumerator SetHitLock()
+    {
+        _hitLock = true;
+        yield return new WaitForSeconds(2f);
+        _hitLock = false;
+    }
     private void FixPositionY()
     {
         RaycastHit hit;
@@ -156,17 +161,21 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
-
     private void GetInput()
     {
+        Vector3 mo = Input.mousePosition;
+                
+        _distanceToScreen = _pickerCamera.WorldToScreenPoint(transform.position).z;
+        _mousePos = _pickerCamera.ScreenToWorldPoint(new Vector3(mo.x, mo.y, _distanceToScreen));
+        
         if (Input.GetMouseButtonDown(0))
         {
-            _lastMousePos = Input.mousePosition.x;
+            _lastMousePos = _mousePos.x;
         }
         else if (Input.GetMouseButton(0))
         {
-            _swerve = (Input.mousePosition.x - _lastMousePos);
-            _lastMousePos = Input.mousePosition.x;
+            _swerve = (_mousePos.x - _lastMousePos);
+            _lastMousePos = _mousePos.x;
         }
         else if (Input.GetMouseButtonUp(0))
         {
@@ -176,19 +185,14 @@ public class PlayerController : MonoBehaviour
     
     private void MovementSmooth()
     {
-        if (_hasInput)
-        {
-            float swerveAmount = _playerData.HorizontalSpeed * _swerve;
-            _playerRigidbody.velocity = new Vector3(swerveAmount, 0, 0) * Time.deltaTime;
-            transform.Translate(0,0,_playerData.ForwardSpeed*Time.deltaTime);
-            ClampPosition();
-        }
-        else
-        {
-            _playerRigidbody.velocity = Vector3.zero;
-        }
+        if (!_hasInput) return;
         
-        
+        float swerveAmount = _playerData.HorizontalSpeed * _swerve;
+        _playerRigidbody.velocity = new Vector3(swerveAmount, 0, 0) * Time.deltaTime;
+        transform.Translate(0,0,_playerData.ForwardSpeed * Time.deltaTime);
+        ClampPosition();
+
+
     }
 
     private void ClampPosition()
