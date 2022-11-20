@@ -17,7 +17,6 @@ public class GameManager : MonoBehaviour
 
     public PlayerController PlayerController => _playerController;
     
-    
     private UIManager _uiManager;
     private PlayerController _playerController;
     public BridgeController CurrentBridge;
@@ -69,7 +68,7 @@ public class GameManager : MonoBehaviour
 
     #region Finish Parkour Settings
 
-    public void SetPlayerStartParkour()
+    private void SetPlayerStartParkour()
     {
         ParkourStatus_When_LevelEnding = SetIsPlayerStartParkourTrue;
         ParkourStatus_When_LevelEnding.Invoke();
@@ -89,7 +88,6 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(.5f);
         ParkourStatus_When_LevelEnding = SetIsPlayerStartParkourFalse;
         ParkourStatus_When_LevelEnding.Invoke();
-        LevelManager.Instance.ResetBarCount();
     }
 
     #endregion
@@ -161,7 +159,6 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    //restartButton.SetActive(true);
                     _uiManager.OpenLevelFail();
                     Debug.Log("Game Over");
                 }
@@ -176,12 +173,12 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator NextStageCoroutine()
     {
-        /// ADD BRIDGE HERE
         CurrentBridge.OpenBridge();
         LevelManager.Instance.SetEnableMovingPool();
         yield return new WaitForSeconds(1.5f);
         ContinueMovingAfterBallFallInPool();
         LevelManager.Instance.PassNextStage();
+        _playerController.SetPlayerState(true);
     }
 
     public void RestartGame()

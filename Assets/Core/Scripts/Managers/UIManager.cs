@@ -13,9 +13,9 @@ public class UIManager : MonoBehaviour
     
     [SerializeField] private Image _background;
     [SerializeField] private Image _tapImage;
-    [SerializeField] private TMP_Text currentLevelText;
-    [SerializeField] private TMP_Text nextLevelText;
-
+    [SerializeField] private TMP_Text _currentLevelText;
+    [SerializeField] private TMP_Text _nextLevelText;
+    [SerializeField] private TMP_Text _scaleUpText;
     [SerializeField] private GameObject _hudParent;
     
     [SerializeField] private Image _stage1Image;
@@ -25,7 +25,9 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private GameObject _levelFail;
     [SerializeField] private GameObject _levelWin;
-    private Tween tapLoop;
+    
+    private Tween _scaleTextLoop;
+    private Tween _tapImageLoop;
 
     
     void Start()
@@ -37,12 +39,31 @@ public class UIManager : MonoBehaviour
     {
         _tapImage.gameObject.SetActive(false);
         _background.gameObject.SetActive(false);
-        tapLoop.Kill();
+        _tapImageLoop.Kill();
         SetHud(true);
         ResetStageUI();
         SetStageUI();
     }
-    
+
+    public void OnScaleUp()
+    {
+        _scaleUpText.gameObject.SetActive(true);
+        Vector3 defaultScale = Vector3.one * 1f; // default scale;
+        Vector3 targetScale = Vector3.one * 1.25f; // default scale;
+
+        _scaleTextLoop = _scaleUpText.transform.DOScale(targetScale, .5f).OnComplete(() =>
+        {
+            _scaleUpText.transform.DOScale(defaultScale, .5f);
+        });
+        _scaleTextLoop.SetLoops(5, LoopType.Yoyo).OnComplete(()=>
+        {
+            _scaleTextLoop.Kill();
+            _scaleUpText.gameObject.SetActive(false);
+
+        });
+        
+
+    }
 
     public void OpenLevelWin()
     {
@@ -77,17 +98,17 @@ public class UIManager : MonoBehaviour
     {
         Vector3 defaultScale = _tapImage.transform.localScale;
         Vector3 targetScale = Vector3.one * .6f;
-        tapLoop = _tapImage.transform.DOScale(targetScale, .5f).OnComplete(() =>
+        _tapImageLoop = _tapImage.transform.DOScale(targetScale, .5f).OnComplete(() =>
         {
             _tapImage.transform.DOScale(defaultScale,.5f);
         });
-        tapLoop.SetLoops(-1, LoopType.Yoyo);
+        _tapImageLoop.SetLoops(-1, LoopType.Yoyo);
     }
 
     public void UpdateLevelUI()
     {
-        currentLevelText.text = LevelManager.Instance.LevelCount.ToString();
-        nextLevelText.text = (LevelManager.Instance.LevelCount + 1).ToString();
+        _currentLevelText.text = LevelManager.Instance.LevelCount.ToString();
+        _nextLevelText.text = (LevelManager.Instance.LevelCount + 1).ToString();
         ResetStageUI();
     }
     

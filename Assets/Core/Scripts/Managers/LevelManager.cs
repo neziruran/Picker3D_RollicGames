@@ -9,7 +9,6 @@ public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
     public static event Action StageStatusWhenContinueNextStage;
-
     public UIManager UıManager => _uiManager;
     public int LevelCount => _levelCount;
     public int StageCount => _stageCount;
@@ -76,29 +75,15 @@ public class LevelManager : MonoBehaviour
         _fakeEnvironment.gameObject.SetActive(false);
     }
 
-    #region Bar Settings
-    public void FillBarCount()
-    {
-        _barCount++;
-    }
-
-    public void ResetBarCount()
-    {
-        _barCount = 0;
-    }
-    
-    #endregion
-
     #region Level Init Settings
     public void CreateNextLevel()
     {
         GameObject level = Instantiate(_levelData[_levelCount-1].LevelPrefab, _spawnPoint.position,transform.rotation);
         level.transform.parent = _levelContainer.transform;
         Destroy(_levelContainer.transform.GetChild(0).gameObject,10f);
-        _playerController.HasInput = true;
-        _playerController.GetComponent<Rigidbody>().isKinematic = true;
+        _playerController.SetPlayerState(true);
     }
-
+    
     public void CreateFirstLevel()
     {
         GameObject level = Instantiate(_levelData[_levelCount-1].LevelPrefab, firstSpawnPoint.position, transform.rotation);
@@ -177,7 +162,11 @@ public class LevelManager : MonoBehaviour
     public void SetPlayerPositionToStartPoint(Transform player)
     {
         player.DOMoveX(0f, 2.5f);
-        player.DOMoveZ(_startPoint.position.z, 2.5f).SetEase(Ease.InOutSine);
+        player.DOMoveZ(_startPoint.position.z, 2.5f).SetEase(Ease.Linear).OnComplete(() =>
+        {
+            _playerController.SetScale();
+            _uiManager.OnScaleUp();
+        });
     }
 
     private void ResetCurrentBallCountInsidePool()

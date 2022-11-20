@@ -1,51 +1,58 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
+using Cinemachine;
 using DG.Tweening;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private PlayerScriptable playerData;
-    [SerializeField] private GameObject playerBallContainer;
-    [SerializeField] private GameObject exitedBallsParent;
+    
+    [SerializeField] private PlayerScriptable _playerData;
     [SerializeField] private GameObject _propellersParent;
 
+    private List<Rigidbody> _ballRigidbodies = new List<Rigidbody>();
+    
+    private float _lastMousePos;
+    private float _swerve;
+    
+    private bool _hasInput = false;
     private bool _initialized = false;
-    private float _lastMousePoint;
-    private bool _isMouseDown = false;
+    private bool _hitLock = false;
+
+    private GameObject _mainBody;
     private Rigidbody _playerRigidbody;
 
-    public bool HasInput = false;
 
     #region Built-In Methods
-
 
     void Awake()
     {
         _playerRigidbody = GetComponent<Rigidbody>();
-        _playerRigidbody.isKinematic = true;
-        transform.GetChild(0).gameObject.SetActive(false); // CLOSE MAIN BODY BEFORE GAME START
+        SetPlayerState(false);
+
+        _mainBody = transform.GetChild(0).gameObject; // CLOSE MAIN BODY BEFORE GAME START
+        _mainBody.gameObject.SetActive(false);  
     }
 
     void Start()
     {
         GameManager.Instance.GameInitialized += OnPlayerInitialize;
-
     }
 
     void Update()
     {
-        if(_initialized)
-            CheckInput();
+        if (_initialized)
+            GetInput();
         else
         {
             if (Input.GetMouseButtonDown(0) && !_initialized)
             {
-                GameManager.Instance.OnGameInitialized(); 
-
+                GameManager.Instance.OnGameInitialized();
             }
         }
-
     }
+
     void FixedUpdate()
     {
         if (_initialized)
@@ -53,63 +60,90 @@ public class PlayerController : MonoBehaviour
             if (GameManager.Instance.IsBallsFallInPool)
                 return;
 
-        
-            FixPositionY();
-            MovePlayer();
 
+            FixPositionY();
+            MovementSmooth();
         }
-        
+    }
+
+
+    private IEnumerator SetHitLock()
+    {
+        _hitLock = true;
+        yield return new WaitForSeconds(2f);
+        _hitLock = false;
     }
 
     private void OnTriggerEnter(Collider other)
     {
+
         if (other.CompareTag("BallTag"))
         {
-            other.gameObject.transform.parent = playerBallContainer.transform;
-            LevelManager.Instance.FillBarCount();
+            _ballRigidbodies.Add(other.GetComponent<Rigidbody>());
         }
-        
+
         if (other.CompareTag("PropellerTag"))
         {
             Destroy(other.gameObject);
             SetPropellers(true);
         }
-        
+
         if (other.CompareTag("StageBorderTag"))
         {
-            SetPropellers(false);
-            Destroy(other.gameObject,3);
-            GameManager.Instance.SetBallsFallInPool();
-            PushBallsOnPool();
-            GameManager.Instance.SetStageStatusToBallFallInsidePool();
-            StartCoroutine(RemoveBallsInPool());
-        }
+            Debug.Log("hit: " + other.gameObject.name);
 
+            if (_hitLock) return;
+            StartCoroutine(SetHitLock());
+            GameManager.Instance.SetStageStatusToBallFallInsidePool();
+            GameManager.Instance.SetBallsFallInPool();
+
+            SetPropellers(false);
+            PushBallsOnPool();
+            StartCoroutine(RemoveBallsInPool());
+            Destroy(other.gameObject, 3);
+        }
     }
+    
+
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("BallTag"))
-            other.gameObject.transform.parent = exitedBallsParent.transform;
-        
+        {
+            _ballRigidbodies.Remove(other.GetComponent<Rigidbody>());
+
+        }
+
         if (other.CompareTag("SpawnStarterTag"))
         {
             if (!GameManager.Instance.IsNewLevelCreated)
             {
                 GameManager.Instance.SetGameNewLevel();
                 other.GetComponent<BoxCollider>().enabled = false;
-                
-                HasInput = false;
-                _playerRigidbody.isKinematic = false;
 
+                SetPlayerState(false);
             }
         }
     }
-    
+
+    public void SetPlayerState(bool activate)
+    {
+        if (activate)
+        {
+            _hasInput = true;
+            _playerRigidbody.isKinematic = false;
+        }
+        else
+        {
+            _hasInput = false;
+            _playerRigidbody.isKinematic = true;
+        }
+    }
+
     #endregion
 
     #region Movement
-    
+
     private void FixPositionY()
     {
         RaycastHit hit;
@@ -117,107 +151,107 @@ public class PlayerController : MonoBehaviour
         {
             if (hit.transform != null)
             {
-                transform.DOMoveY(hit.transform.position.y, 0f);
+                Vector3 position = new Vector3(transform.position.x, hit.transform.position.y, transform.position.z);
+                _playerRigidbody.MovePosition(position);
             }
         }
     }
 
-    private void CheckInput()
+    private void GetInput()
     {
-
         if (Input.GetMouseButtonDown(0))
         {
-            _isMouseDown = true;
-            _lastMousePoint = Input.mousePosition.x;
-
+            _lastMousePos = Input.mousePosition.x;
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            _swerve = (Input.mousePosition.x - _lastMousePos);
+            _lastMousePos = Input.mousePosition.x;
         }
         else if (Input.GetMouseButtonUp(0))
         {
-            _isMouseDown = false;
+            _swerve = 0;
         }
     }
     
-    private void MovePlayer()
+    private void MovementSmooth()
     {
-        if (!HasInput) return;
-        
-        if (_isMouseDown)
+        if (_hasInput)
         {
-            float difference = Input.mousePosition.x - _lastMousePoint;
-        
-            float xPos = transform.position.x + difference * Time.deltaTime * playerData.HorizontalSpeed;
-            xPos = Mathf.Clamp(xPos, playerData.MinBoundX, playerData.MaxBoundX);
-        
-            Vector3 movementMouseDown = new Vector3(xPos, transform.position.y,
-                transform.position.z + playerData.ForwardSpeed * Time.deltaTime);
-            
-            _playerRigidbody.MovePosition(movementMouseDown);
-            _lastMousePoint = Input.mousePosition.x;
+            float swerveAmount = _playerData.HorizontalSpeed * _swerve;
+            _playerRigidbody.velocity = new Vector3(swerveAmount, 0, 0) * Time.deltaTime;
+            transform.Translate(0,0,_playerData.ForwardSpeed*Time.deltaTime);
+            ClampPosition();
         }
         else
         {
-            Vector3 movementMouseUp = new Vector3(transform.position.x, transform.position.y,
-                transform.position.z + playerData.ForwardSpeed * Time.deltaTime);
-            _playerRigidbody.MovePosition(movementMouseUp);
+            _playerRigidbody.velocity = Vector3.zero;
+        }
+        
+        
+    }
+
+    private void ClampPosition()
+    {
+        if (transform.position.x > _playerData.MaxBoundX)
+        {
+            transform.position = new Vector3(_playerData.MaxBoundX, transform.position.y, transform.position.z);
+        }
+        if (transform.position.x < _playerData.MinBoundX)
+        {
+            transform.position = new Vector3(_playerData.MinBoundX, transform.position.y, transform.position.z);
         }
     }
 
-
-    
     #endregion
 
     #region Scale
 
     public void SetScale()
     {
-        float nextScale = 1.1f;
+        float nextScale = .05f;
         SetScaleValue(nextScale);
+        Debug.Log("scaled");
     }
+
     private void SetScaleValue(float scale)
     {
-        playerData.PlayerScale = Vector3.one * scale;
+        transform.localScale += Vector3.one* scale;
     }
-
-    private void ScalePlayer(float time)
-    {
-        transform.DOScale(playerData.PlayerScale, time);
-    }
-
+    
     public void ResetScale()
     {
-        SetScaleValue(1f);
+        transform.DOScale(Vector3.one, 0f);
     }
-
 
     #endregion
 
     #region Controllers
 
-    
     private void OnPlayerInitialize()
     {
-        _playerRigidbody.isKinematic = false;
-        transform.GetChild(0).gameObject.SetActive(true);
-        HasInput = true;
+        _mainBody.SetActive(true);
+        SetPlayerState(true);
         _initialized = true;
-        ScalePlayer(0f); // get current Scale
-
+        ResetScale();
     }
+    
     private void PushBallsOnPool()
     {
-        Rigidbody[] ballRigidbody = playerBallContainer.GetComponentsInChildren<Rigidbody>();
-        foreach(Rigidbody rb in ballRigidbody)
+        Debug.Log("PUSHED BALLS");
+        
+        Rigidbody[] ballRigidbody = _ballRigidbodies.ToArray();
+        foreach (Rigidbody ballRb in ballRigidbody)
         {
-            rb.AddForce(transform.forward * playerData.BallPush * Time.deltaTime, ForceMode.Impulse);
+            ballRb.AddForce(transform.forward * _playerData.BallPush * Time.deltaTime, ForceMode.Impulse);
         }
     }
 
     IEnumerator RemoveBallsInPool()
     {
         yield return new WaitForSeconds(1.5f);
-        foreach (Transform item in exitedBallsParent.transform)
+        foreach (Rigidbody item in _ballRigidbodies)
         {
-            //item.gameObject.SetActive(false);
             Destroy(item.gameObject);
         }
     }
@@ -228,8 +262,8 @@ public class PlayerController : MonoBehaviour
     }
 
     #endregion
-
-
-
+    
+    
 
 }
+
