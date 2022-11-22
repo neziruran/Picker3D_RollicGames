@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerScriptable _playerData;
     [SerializeField] private GameObject _propellersParent;
     [SerializeField] private Camera _pickerCamera;
-    
+        
     //Movement variables
     private Vector3 _mousePos;
     
@@ -25,8 +25,8 @@ public class PlayerController : MonoBehaviour
 
     private GameObject _mainBody;
     private Rigidbody _playerRigidbody;
+    private Transform _ballParent;
 
-    private List<Rigidbody> _ballRigidbodies = new List<Rigidbody>();
 
 
     #region Built-In Methods
@@ -77,9 +77,9 @@ public class PlayerController : MonoBehaviour
 
         if (other.CompareTag("BallTag"))
         {
+            var ballParent = transform.GetChild(2);
             var ballRigidbody = other.transform.GetComponent<Rigidbody>();
-            ballRigidbody.transform.SetParent(this.transform);
-            _ballRigidbodies.Add(ballRigidbody);
+            ballRigidbody.transform.SetParent(ballParent);
 
         }
 
@@ -112,7 +112,6 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("BallTag"))
         {
-            _ballRigidbodies.Remove(other.GetComponent<Rigidbody>());
             other.transform.SetParent(null);
 
         }
@@ -218,7 +217,7 @@ public class PlayerController : MonoBehaviour
 
     public void SetScale()
     {
-        float nextScale = .05f;
+        float nextScale = .025f;
         SetScaleValue(nextScale);
         Debug.Log("scaled");
     }
@@ -239,6 +238,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnPlayerInitialize()
     {
+        _ballParent = transform.GetChild(2);
         _mainBody.SetActive(true);
         SetPlayerState(true);
         _initialized = true;
@@ -246,20 +246,23 @@ public class PlayerController : MonoBehaviour
     }
     
     private void PushBallsOnPool()
+    
     {
         Debug.Log("PUSHED BALLS");
         
-        Rigidbody[] ballRigidbody = _ballRigidbodies.ToArray();
-        foreach (Rigidbody ballRb in ballRigidbody)
+        Rigidbody[] balls = _ballParent.GetComponentsInChildren<Rigidbody>(); 
+        foreach (Rigidbody ball in balls)
         {
-            ballRb.AddForce(transform.forward * _playerData.BallPush * Time.deltaTime, ForceMode.Impulse);
+            ball.AddForce(Vector3.forward*_playerData.BallPush,ForceMode.Force);
         }
+        
     }
 
     IEnumerator RemoveBallsInPool()
     {
         yield return new WaitForSeconds(1.5f);
-        foreach (Rigidbody item in _ballRigidbodies)
+        Rigidbody[] balls = _ballParent.GetComponentsInChildren<Rigidbody>(); 
+        foreach (Rigidbody item in balls)
         {
             Destroy(item.gameObject);
         }

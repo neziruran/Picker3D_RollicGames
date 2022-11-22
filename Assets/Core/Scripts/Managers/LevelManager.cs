@@ -148,6 +148,8 @@ public class LevelManager : MonoBehaviour
         StageStatusWhenContinueNextStage += ResetCurrentBallCountInsidePool;
         StageStatusWhenContinueNextStage?.Invoke();
         StageStatusWhenContinueNextStage = null;
+        _playerController.SetScale();
+        _uiManager.OnScaleUp();
     }
 
     public void OnPlayerHitOnMovingPool()
@@ -169,8 +171,7 @@ public class LevelManager : MonoBehaviour
         player.DOMoveX(0f, 2.5f);
         player.DOMoveZ(_startPoint.position.z, 2.5f).SetEase(Ease.Linear).OnComplete(() =>
         {
-            _playerController.SetScale();
-            _uiManager.OnScaleUp();
+            
         });
     }
 
