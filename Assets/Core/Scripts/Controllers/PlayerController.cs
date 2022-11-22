@@ -219,7 +219,6 @@ public class PlayerController : MonoBehaviour
     {
         float nextScale = .025f;
         SetScaleValue(nextScale);
-        Debug.Log("scaled");
     }
 
     private void SetScaleValue(float scale)
@@ -248,8 +247,6 @@ public class PlayerController : MonoBehaviour
     private void PushBallsOnPool()
     
     {
-        Debug.Log("PUSHED BALLS");
-        
         Rigidbody[] balls = _ballParent.GetComponentsInChildren<Rigidbody>(); 
         foreach (Rigidbody ball in balls)
         {
