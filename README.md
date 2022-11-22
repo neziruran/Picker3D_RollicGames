@@ -12,5 +12,8 @@ Nezir Uran - 21.11.22
 
 GAMEPLAY 
 
-https://user-images.githubusercontent.com/53615111/202931362-bcfa554f-2960-4f4c-a1c6-c3022c04189b.mp4
+
+
+
+https://user-images.githubusercontent.com/53615111/203384688-ad84a398-c0d3-4f58-80dd-0958aa6bc5e9.mp4
 
