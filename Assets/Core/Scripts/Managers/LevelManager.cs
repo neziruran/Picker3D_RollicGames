@@ -9,6 +9,8 @@ public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
     public static event Action StageStatusWhenContinueNextStage;
+    public event Action OnMovingPool;
+
     public UIManager UıManager => _uiManager;
     public int LevelCount => _levelCount;
     public int StageCount => _stageCount;
@@ -148,6 +150,10 @@ public class LevelManager : MonoBehaviour
         StageStatusWhenContinueNextStage = null;
     }
 
+    public void OnPlayerHitOnMovingPool()
+    {
+        OnMovingPool?.Invoke();
+    }
     public void IncreaseCurrentBallCountInsidePool()
     {
         _ballCountInsidePool++;

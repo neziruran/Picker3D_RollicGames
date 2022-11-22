@@ -77,7 +77,10 @@ public class PlayerController : MonoBehaviour
 
         if (other.CompareTag("BallTag"))
         {
-            _ballRigidbodies.Add(other.GetComponent<Rigidbody>());
+            var ballRigidbody = other.transform.GetComponent<Rigidbody>();
+            ballRigidbody.transform.SetParent(this.transform);
+            _ballRigidbodies.Add(ballRigidbody);
+
         }
 
         if (other.CompareTag("PropellerTag"))
@@ -91,6 +94,7 @@ public class PlayerController : MonoBehaviour
             Debug.Log("hit: " + other.gameObject.name);
 
             if (_hitLock) return;
+            LevelManager.Instance.OnPlayerHitOnMovingPool();
             StartCoroutine(SetHitLock());
             GameManager.Instance.SetStageStatusToBallFallInsidePool();
             GameManager.Instance.SetBallsFallInPool();
@@ -109,6 +113,7 @@ public class PlayerController : MonoBehaviour
         if (other.CompareTag("BallTag"))
         {
             _ballRigidbodies.Remove(other.GetComponent<Rigidbody>());
+            other.transform.SetParent(null);
 
         }
 

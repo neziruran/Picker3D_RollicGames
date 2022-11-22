@@ -16,4 +16,4 @@ MonoBehaviour:
   _minBoundX: -0.95
   _maxBoundX: 0.95
   _forwardSpeed: 2
-  _ballPush: 25
+  _ballPush: 35
